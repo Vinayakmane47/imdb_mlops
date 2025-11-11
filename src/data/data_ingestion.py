@@ -70,29 +70,56 @@ def save_data(train_data: pd.DataFrame, test_data: pd.DataFrame, data_path: str)
         logging.error('Unexpected error occurred while saving the data: %s', e)
         raise
 
+def load_data_from_s3() -> pd.DataFrame:
+    """Try to load data from S3, returns None if fails or credentials not available."""
+    try:
+        bucket_name = os.getenv("AWS_BUCKET_NAME")
+        aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+        aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        region_name = os.getenv("AWS_REGION", "us-east-1")
+        
+        # Check if all required env vars are set
+        if not all([bucket_name, aws_access_key, aws_secret_key]):
+            logging.warning("AWS credentials not fully configured. Skipping S3 fetch.")
+            return None
+        
+        s3 = s3_connection.s3_operations(
+            bucket_name=bucket_name,
+            aws_access_key=aws_access_key,
+            aws_secret_key=aws_secret_key,
+            region_name=region_name,
+        )
+        df = s3.fetch_file_from_s3("data.csv")
+        return df
+    except Exception as e:
+        logging.warning(f"Failed to load data from S3: {e}")
+        return None
+
 def main():
     try:
         params = load_params(params_path='params.yaml')
         test_size = params['data_ingestion']['test_size']
-        #test_size = 0.2
         
-        #df = load_data(data_url='https://raw.githubusercontent.com/vikashishere/Datasets/refs/heads/main/data.csv')
-        s3 = s3_connection.s3_operations(
-            bucket_name=os.getenv("AWS_BUCKET_NAME"),
-            aws_access_key=os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name=os.getenv("AWS_REGION"),
-        )
-        df = s3.fetch_file_from_s3("data.csv")
-
-
-
+        # Try to load from S3 first
+        df = load_data_from_s3()
+        
+        # Fallback to public URL if S3 fails or credentials not available
+        if df is None or df.empty:
+            logging.info("S3 fetch failed or returned empty. Using fallback URL...")
+            fallback_url = 'https://raw.githubusercontent.com/vikashishere/Datasets/refs/heads/main/data.csv'
+            df = load_data(data_url=fallback_url)
+        
+        if df is None or df.empty:
+            raise ValueError("Failed to load data from both S3 and fallback URL")
+        
         final_df = preprocess_data(df)
         train_data, test_data = train_test_split(final_df, test_size=test_size, random_state=42)
         save_data(train_data, test_data, data_path='./data')
+        
     except Exception as e:
         logging.error('Failed to complete the data ingestion process: %s', e)
         print(f"Error: {e}")
+        raise
 
 if __name__ == '__main__':
     main()

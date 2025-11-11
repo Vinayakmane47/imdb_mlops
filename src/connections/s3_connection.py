@@ -13,6 +13,14 @@ class s3_operations:
         """
         Initialize the s3_operations class with AWS credentials and S3 bucket details.
         """
+        # Validate inputs
+        if not bucket_name:
+            raise ValueError("bucket_name cannot be None or empty")
+        if not aws_access_key:
+            raise ValueError("aws_access_key cannot be None or empty")
+        if not aws_secret_key:
+            raise ValueError("aws_secret_key cannot be None or empty")
+        
         self.bucket_name = bucket_name
         self.s3_client = boto3.client(
             's3',
@@ -35,7 +43,7 @@ class s3_operations:
             logging.info(f"Successfully fetched and loaded '{file_key}' from S3 that has {len(df)} records.")
             return df
         except Exception as e:
-            logging.exception(f"❌ Failed to fetch '{file_key}' from S3: {e}")
+            logging.exception(f"Failed to fetch '{file_key}' from S3: {e}")
             return None
 
 # Example usage
