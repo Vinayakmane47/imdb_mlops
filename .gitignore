@@ -198,3 +198,4 @@ src.egg-info/
 /creeds.txt
 local_s3/
 data/
+models/
