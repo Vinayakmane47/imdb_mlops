@@ -3,85 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentiment Analysis</title>
+    <title>IMDB Sentiment Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
+
         .container {
-            max-width: 500px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.5s ease-out;
         }
-        h1 {
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
             color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
         textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            resize: none;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            resize: vertical;
             font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            min-height: 120px;
         }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
         button {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 20px;
-            margin-top: 10px;
+            padding: 15px 40px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 10px;
             font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         button:hover {
-            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
-        .result {
-            margin-top: 20px;
-            font-size: 22px;
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            margin-top: 30px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .result-card {
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-card.positive {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+        }
+
+        .result-card.negative {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .result-icon {
+            font-size: 3em;
+            animation: bounce 0.6s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .result-text {
+            font-size: 1.8em;
             font-weight: bold;
-            padding: 10px;
-            border-radius: 5px;
+            color: #333;
         }
-        .positive {
+
+        .result-card.positive .result-text {
             color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
         }
-        .negative {
+
+        .result-card.negative .result-text {
             color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metric-value.latency {
+            color: #667eea;
+        }
+
+        .metric-value.cost {
+            color: #28a745;
+        }
+
+        .input-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .input-preview-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-preview-text {
+            color: #333;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Sentiment Analysis</h1>
+        <div class="header">
+            <h1><i class="fas fa-film"></i> IMDB Sentiment Analysis</h1>
+            <p>Analyze the sentiment of movie reviews using AI</p>
+        </div>
+
         <form action="/predict" method="POST">
-            <label for="text">Write text:</label><br>
-            <textarea id="text" name="text" rows="5" placeholder="Enter your text here..."></textarea><br>
-            <button type="submit">Predict</button>
+            <div class="form-group">
+                <label for="text">
+                    <i class="fas fa-comment-alt"></i> Enter your review text:
+                </label>
+                <textarea 
+                    id="text" 
+                    name="text" 
+                    rows="6" 
+                    placeholder="Enter a movie review to analyze its sentiment..."
+                    required
+                >{% if original_text is defined %}{{ original_text }}{% endif %}</textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit">
+                    <i class="fas fa-brain"></i> Analyze Sentiment
+                </button>
+            </div>
         </form>
 
         {% if result is not none %}
-            <div class="result {% if result == 1 %}positive{% else %}negative{% endif %}">
-                {% if result == 1 %}
-                    😊 Positive Sentiment
-                {% else %}
-                    😞 Negative Sentiment
+            <div class="result-container">
+                <div class="result-card {% if result == 1 %}positive{% else %}negative{% endif %}">
+                    <div class="result-header">
+                        <div class="result-icon">
+                            {% if result == 1 %}
+                                <i class="fas fa-smile"></i>
+                            {% else %}
+                                <i class="fas fa-frown"></i>
+                            {% endif %}
+                        </div>
+                        <div class="result-text">
+                            {% if result == 1 %}
+                                Positive Sentiment
+                            {% else %}
+                                Negative Sentiment
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if original_text is defined %}
+                    <div class="input-preview">
+                        <div class="input-preview-label">
+                            <i class="fas fa-quote-left"></i> Analyzed Text:
+                        </div>
+                        <div class="input-preview-text">
+                            "{{ original_text[:200] }}{% if original_text|length > 200 %}...{% endif %}"
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if latency is not none or cost is not none %}
+                <div class="metrics">
+                    {% if latency is not none %}
+                    <div class="metric-card">
+                        <div class="metric-label">
+                            <i class="fas fa-clock"></i> Response Time
+                        </div>
+                        <div class="metric-value latency">
+                            {{ "%.3f"|format(latency) }}s
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if cost is not none %}
+                    <div class="metric-card">
+                        <div class="metric-label">
+                            <i class="fas fa-dollar-sign"></i> Cost per Request
+                        </div>
+                        <div class="metric-value cost">
+                            ${{ "%.6f"|format(cost) }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
         {% endif %}
-    </div>
 
+        <div class="footer">
+            <p>
+                <i class="fas fa-server"></i> Powered by MLflow & EKS
+                {% if latency is not none %}
+                | <i class="fas fa-tachometer-alt"></i> Latency: {{ "%.3f"|format(latency) }}s
+                {% endif %}
+            </p>
+        </div>
+    </div>
 </body>
 </html>

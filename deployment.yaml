@@ -17,6 +17,7 @@ spec:
       containers:
       - name: flask-app
         image: 487084413361.dkr.ecr.us-east-1.amazonaws.com/imdb-mlops:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5005
         resources:

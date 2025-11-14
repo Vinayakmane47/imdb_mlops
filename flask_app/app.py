@@ -178,7 +178,10 @@ def predict():
     COST_PER_REQUEST.labels(endpoint="/predict").set(cost)
     TOTAL_COST.inc(cost)
 
-    return render_template("index.html", result=prediction, latency=latency, cost=cost)
+    # Get original text for display
+    original_text = request.form["text"]
+    
+    return render_template("index.html", result=prediction, latency=latency, cost=cost, original_text=original_text)
 
 @app.route("/metrics", methods=["GET"])
 def metrics():
