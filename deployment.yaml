@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+        image: 487084413361.dkr.ecr.us-east-1.amazonaws.com/imdb-mlops:latest
         ports:
         - containerPort: 5005
         resources:
