@@ -3,7 +3,7 @@
 
 A production-ready MLOps pipeline for sentiment analysis of IMDB movie reviews, featuring automated CI/CD, model versioning, and cloud deployment.
 
-🔗 Youtube Link : https://youtu.be/1MBQ6MDraMY
+🔗 Youtube Link : https://youtu.be/0nNESkevqgM
 
 
 ## 🎯 Overview
