@@ -1,113 +1,139 @@
+
 # IMDB Sentiment Analysis - MLOps Pipeline
 
-A production-ready MLOps pipeline for sentiment analysis of IMDB movie reviews, demonstrating end-to-end machine learning operations from data ingestion to cloud deployment.
+A production-ready MLOps pipeline for sentiment analysis of IMDB movie reviews, featuring automated CI/CD, model versioning, and cloud deployment.
 
-## Overview
+## 📋 Table of Contents
 
-This project implements a complete MLOps workflow featuring automated data pipelines, model versioning, continuous integration/deployment, and cloud-based serving infrastructure. The system processes IMDB movie reviews to classify sentiment (positive/negative) using a Logistic Regression model with TF-IDF feature engineering.
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Setup](#setup)
+- [Usage](#usage)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Deployment](#deployment)
+- [Monitoring](#monitoring)
+- [Model Metrics](#model-metrics)
 
-## Key Features
+## 🎯 Overview
 
-- **Automated Data Pipeline**: Version-controlled data processing using DVC
-- **Model Versioning**: MLflow-based experiment tracking and model registry
-- **CI/CD Integration**: Automated testing, building, and deployment via GitHub Actions
-- **Cloud Deployment**: Containerized Flask application on AWS EKS
-- **Production Monitoring**: Prometheus metrics and Grafana dashboards
-- **Reproducible Experiments**: Parameterized pipeline with YAML configuration
+This project implements an end-to-end MLOps pipeline for sentiment analysis using IMDB movie reviews. It demonstrates best practices in:
 
-## Technology Stack
+- **Data Versioning**: DVC for data and model versioning
+- **Model Tracking**: MLflow for experiment tracking and model registry
+- **CI/CD**: Automated testing, building, and deployment via GitHub Actions
+- **Cloud Deployment**: Containerized Flask app on AWS EKS
+- **Monitoring**: Prometheus metrics and Grafana dashboards
+- **Reproducibility**: Parameterized pipeline with YAML configuration
 
-**MLOps & Data**
-- DVC (Data Version Control) for data and pipeline versioning
-- MLflow for experiment tracking and model registry
-- DAGSHub for MLflow backend hosting
+### Key Performance Metrics
 
-**Machine Learning**
-- Scikit-learn (Logistic Regression)
-- TF-IDF vectorization with n-grams (1-3)
-- NLTK for text preprocessing
+- **P95 Latency**: 3-4.5 seconds for `/predict` endpoint
+- **Average Inference Latency**: 0.5 seconds (spikes to 3.5s under load)
+- **Cost per Request**: $0.00004 USD per prediction
+- **Request Rate**: Variable traffic patterns (0-0.2 RPS)
+- **Model Performance**: Accuracy, Precision, Recall, and AUC tracked in MLflow
 
-**Infrastructure**
-- Docker for containerization
-- AWS ECR for container registry
-- AWS EKS for Kubernetes orchestration
-- AWS S3 for data storage
 
-**CI/CD & Monitoring**
-- GitHub Actions for automation
-- Prometheus for metrics collection
-- Grafana for visualization
 
-## Architecture
+## 🛠️ Tech Stack
 
-### Data Pipeline Flow
+### Core Technologies
+- **Python 3.10**: Main programming language
+- **Scikit-learn**: Machine learning library
+- **Flask**: Web framework for API
+- **Gunicorn**: WSGI HTTP server
 
-```
-Data Ingestion → Preprocessing → Feature Engineering → Model Training → Evaluation → Registration
-     │                │                  │                  │              │            │
-  S3/URL          Text Cleaning      TF-IDF Vector      Logistic      Metrics     MLflow
-  Download        Lemmatization      (20K features)     Regression    (Acc/Prec)  Registry
-  Train/Test      Stopword Removal   N-grams (1-3)      (C=10, L2)    (Recall)    Production
-  Split (80/20)   URL/Number Remove                     (lbfgs)       (AUC)
-```
+### MLOps Tools
+- **DVC (Data Version Control)**: Data and pipeline versioning
+- **MLflow**: Experiment tracking and model registry
+- **DAGSHub**: MLflow backend hosting
 
-### System Components
+### Infrastructure
+- **Docker**: Containerization
+- **AWS ECR**: Container registry
+- **AWS EKS**: Kubernetes orchestration
+- **AWS S3**: Data storage (DVC remote)
 
-1. **Development Environment**: Local development with DVC pipeline execution
-2. **CI/CD Pipeline**: Automated testing and deployment on code push
-3. **Cloud Infrastructure**: AWS EKS cluster hosting containerized Flask application
-4. **Monitoring Stack**: Prometheus scraping application metrics, visualized in Grafana
-5. **Model Registry**: MLflow tracking experiments and managing model versions
+### CI/CD
+- **GitHub Actions**: Continuous integration/deployment
+- **Kubectl**: Kubernetes deployment
 
-## Project Structure
+### Monitoring
+- **Prometheus**: Metrics collection
+- **Grafana**: Visualization and dashboards
+
+## 📁 Project Structure
 
 ```
 imdb_mlops/
-├── .github/workflows/        # CI/CD pipeline configuration
-├── data/                     # Data directories (DVC tracked)
-│   ├── raw/                  # Original datasets
-│   ├── interim/              # Preprocessed data
-│   └── processed/            # Feature-engineered data
-├── flask_app/                # Production Flask application
-│   ├── app.py               # Main application with Prometheus metrics
-│   └── templates/           # Web UI templates
-├── models/                   # Trained models (DVC tracked)
-├── notebooks/                # Experimental notebooks
-├── reports/                  # Evaluation metrics
-├── scripts/                  # Utility scripts
-├── src/                      # Source code modules
-│   ├── data/                # Data ingestion and preprocessing
-│   ├── features/            # Feature engineering
-│   ├── model/               # Model training and evaluation
-│   └── connections/         # AWS connection utilities
-├── tests/                    # Unit and integration tests
-├── dvc.yaml                  # DVC pipeline definition
-├── params.yaml               # Pipeline parameters
-└── deployment.yaml           # Kubernetes deployment configuration
+├── .github/
+│   └── workflows/
+│       └── ci.yaml              # CI/CD pipeline configuration
+├── data/
+│   ├── raw/                     # Raw data (tracked by DVC)
+│   ├── interim/                 # Preprocessed data (tracked by DVC)
+│   └── processed/               # Feature-engineered data (tracked by DVC)
+├── flask_app/
+│   ├── app.py                   # Flask application
+│   ├── templates/
+│   │   └── index.html          # Web UI
+│   └── requirements.txt        # Flask dependencies
+├── models/                      # Trained models (tracked by DVC)
+│   ├── model.pkl
+│   └── vectorizer.pkl
+├── notebooks/                   # Jupyter notebooks for experimentation
+├── reports/                     # Evaluation metrics and reports
+│   └── metrics.json
+├── scripts/
+│   └── promote_model.py        # Model promotion script
+├── src/
+│   ├── connections/            # AWS connection utilities
+│   ├── data/                   # Data ingestion and preprocessing
+│   ├── features/               # Feature engineering
+│   ├── model/                  # Model training and evaluation
+│   └── logger/                 # Logging utilities
+├── tests/                       # Unit and integration tests
+├── .dvc/                        # DVC configuration
+├── dvc.yaml                     # DVC pipeline definition
+├── params.yaml                  # Pipeline parameters
+├── deployment.yaml              # Kubernetes deployment config
+├── Dockerfile                   # Container image definition
+└── requirements.txt             # Python dependencies
 ```
 
-## Model Configuration
+## ✨ Features
 
-**Algorithm**: Logistic Regression  
-**Features**: TF-IDF vectorization
-- Maximum features: 20,000
-- N-gram range: (1, 3) - Unigrams, Bigrams, Trigrams
-- Minimum document frequency: 1
-- Maximum document frequency: 1.0
-- Sublinear TF: Enabled
+### Model Configuration
+- **Algorithm**: Logistic Regression (Best Model)
+- **Features**: TF-IDF with Unigrams + Trigrams (1-3 ngrams)
+- **Max Features**: 20,000
+- **Hyperparameters**:
+  - C: 10
+  - Penalty: L2
+  - Solver: lbfgs
+  - Max Iterations: 1000
 
-**Hyperparameters**:
-- Regularization (C): 10
-- Penalty: L2
-- Solver: lbfgs
-- Maximum iterations: 1000
+### Monitoring Metrics
+- **Application Metrics**:
+  - Request count (by method and endpoint)
+  - Request latency (by endpoint)
+  - Prediction count (by class)
+  - Cost per request (USD)
+  - Total accumulated cost (USD)
 
-## Setup
+### Model Metrics
+- Accuracy
+- Precision
+- Recall
+- AUC (Area Under Curve)
+
+## 🚀 Setup
 
 ### Prerequisites
-
 - Python 3.10+
-- Conda
+- Conda (recommended)
 - Docker
 - AWS CLI configured
 - kubectl configured
@@ -115,132 +141,213 @@ imdb_mlops/
 
 ### Installation
 
+1. **Clone the repository**
 ```bash
-# Clone repository
 git clone <repository-url>
 cd imdb_mlops
-
-# Create conda environment
-conda create -n atlas python=3.10
-conda activate atlas
-
-# Install dependencies
-pip install -r requirements.txt
-pip install -r flask_app/requirements.txt
-
-# Download NLTK data
-python -c "import nltk; nltk.download('stopwords'); nltk.download('wordnet')"
-
-# Configure environment variables
-# Create .env file with:
-# DAGSHUB_TOKEN=your_token
-# AWS_ACCESS_KEY_ID=your_key
-# AWS_SECRET_ACCESS_KEY=your_secret
 ```
 
-## Usage
-
-### Running the Pipeline
-
+2. **Create conda environment**
 ```bash
-# Execute complete pipeline
+conda create -n atlas python=3.10
+conda activate atlas
+```
+
+3. **Install dependencies**
+```bash
+pip install -r requirements.txt
+pip install -r flask_app/requirements.txt
+```
+
+4. **Download NLTK data**
+```bash
+python -c "import nltk; nltk.download('stopwords'); nltk.download('wordnet')"
+```
+
+5. **Configure DVC remote (if using S3)**
+```bash
+dvc remote add -d myremote s3://your-bucket-name/dvc-cache
+```
+
+6. **Set up environment variables**
+Create a `.env` file:
+```bash
+DAGSHUB_TOKEN=your_dagshub_token
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
+AWS_BUCKET_NAME=your_bucket_name
+AWS_REGION=us-east-1
+```
+
+## 📖 Usage
+
+### Running the Pipeline Locally
+
+1. **Run the complete pipeline**
+```bash
 dvc repro
+```
 
-# Run specific stage
+2. **Run specific stages**
+```bash
+dvc repro data_ingestion
 dvc repro model_building
+```
 
-# Pull data from remote storage
+3. **Pull data from DVC remote**
+```bash
 dvc pull
+```
 
-# Push artifacts to remote storage
+4. **Push data to DVC remote**
+```bash
 dvc push
 ```
 
-### Local Development
+### Running the Flask App Locally
 
+1. **Start the Flask application**
 ```bash
-# Start Flask application
 cd flask_app
 python app.py
-
-# Access application
-# http://localhost:5005
-
-# View metrics
-# http://localhost:5005/metrics
 ```
 
-### Testing
-
-```bash
-# Run all tests
-python -m unittest discover tests
-
-# Run specific test suite
-python -m unittest tests.test_model
-python -m unittest tests.test_flask_app
+2. **Access the web interface**
+```
+http://localhost:5005
 ```
 
-## CI/CD Pipeline
+3. **Check metrics endpoint**
+```
+http://localhost:5005/metrics
+```
 
-The GitHub Actions workflow automates the following:
+## 🔄 CI/CD Pipeline
 
-1. **Code Validation**: Checkout and dependency installation
-2. **Pipeline Execution**: Run complete DVC pipeline (data → model)
-3. **Testing**: Execute unit and integration tests
-4. **Model Promotion**: Promote validated model to Production in MLflow
-5. **Container Build**: Build Docker image with application
-6. **Registry Push**: Push image to AWS ECR
-7. **Kubernetes Deployment**: Deploy to EKS cluster with automatic rollout
+### Pipeline Stages
 
-The pipeline triggers on push to main branch and pull requests.
+1. **Code Checkout**: Clone repository
+2. **Environment Setup**: Install Python and dependencies
+3. **Pipeline Execution**: Run `dvc repro` (full ML pipeline)
+4. **Testing**: Run unit and integration tests
+5. **Model Promotion**: Promote model to Production in MLflow
+6. **Docker Build**: Build container image
+7. **ECR Push**: Push image to AWS ECR
+8. **EKS Deployment**: Deploy to Kubernetes cluster
 
-## Deployment
+### Triggering CI/CD
 
-The application is deployed as a containerized service on AWS EKS:
+The pipeline automatically runs on:
+- Push to `main` branch
+- Pull requests
 
-- **Container Registry**: AWS ECR
-- **Orchestration**: Kubernetes (EKS)
-- **Service Type**: LoadBalancer
-- **Replicas**: 2 pods for high availability
-- **Resource Limits**: 512Mi memory, 1 CPU per pod
+### Manual Trigger
 
-Deployment is automated via CI/CD. Manual deployment:
+You can also trigger manually from GitHub Actions tab.
+
+## 🚢 Deployment
+
+### Prerequisites
+- AWS EKS cluster created
+- AWS ECR repository created
+- kubectl configured for EKS
+- AWS credentials configured in GitHub Secrets
+
+### Deployment Process
+
+The CI/CD pipeline automatically:
+1. Builds Docker image with latest code
+2. Pushes to AWS ECR
+3. Updates Kubernetes deployment
+4. Restarts pods to pull new image
+
+### Manual Deployment
 
 ```bash
+# Build and push Docker image
+docker build -t your-ecr-repo:latest .
+docker push your-ecr-repo:latest
+
+# Deploy to EKS
 kubectl apply -f deployment.yaml
 kubectl rollout restart deployment flask-app
 ```
 
-## Monitoring
+### Accessing the Application
 
-### Application Metrics
+After deployment, get the LoadBalancer URL:
+```bash
+kubectl get service flask-app-service
+```
 
-The Flask application exposes Prometheus metrics at `/metrics`:
+Access the application at the EXTERNAL-IP:5005
 
-- `app_request_count`: Total HTTP requests (by method and endpoint)
-- `app_request_latency_seconds`: Request latency distribution
-- `model_prediction_count`: Prediction counts by class
-- `app_cost_per_request_usd`: Estimated compute cost per request
-- `app_total_cost_usd`: Cumulative compute cost
+## 📊 Monitoring
 
-### Model Metrics
+### Prometheus Metrics
 
-Model evaluation metrics are logged to MLflow and stored in `reports/metrics.json`:
-- Accuracy
-- Precision
-- Recall
-- AUC (Area Under Curve)
+The Flask app exposes metrics at `/metrics` endpoint:
+- `app_request_count`: Total requests
+- `app_request_latency_seconds`: Request latency
+- `model_prediction_count`: Prediction counts
+- `app_cost_per_request_usd`: Cost per request
+- `app_total_cost_usd`: Total cost
 
-### Visualization
+### Grafana Dashboards
 
-- **MLflow UI**: `https://dagshub.com/Vinayakmane47/imdb_mlops.mlflow`
-- **Grafana**: Configured to visualize Prometheus metrics
-- **Local Reports**: `reports/metrics.json` for programmatic access
+Configure Prometheus to scrape metrics from:
+- Service: `flask-app-service:5005`
+- Path: `/metrics`
 
-## Configuration
+Create dashboards in Grafana to visualize:
+- Request rates and latency
+- Prediction distribution
+- Cost metrics
+- Model performance
 
-Pipeline parameters are centralized in `params.yaml`. Modify parameters and run `dvc repro` to retrain with new configurations:
+#### Dashboard Observations
+
+- **Cost per Request**: Ranges from $0 to $0.00004 USD, with periodic spikes during active prediction requests
+- **P95 Latency**: `/predict` endpoint maintains 3-4 seconds latency, stabilizing around 4.5 seconds under consistent load
+- **Average Inference Latency**: `/predict` averages 0.5 seconds with occasional spikes to 3.5 seconds during high load
+- **Request Rates**: `/predict` endpoint shows variable traffic patterns (0-0.2 RPS), while `/` endpoint maintains steady low traffic
+- **Prediction Distribution**: Class distribution tracked over time, showing balanced prediction patterns
+
+### MLflow Tracking
+
+View experiments and models at:
+- **DAGSHub MLflow**: `https://dagshub.com/Vinayakmane47/imdb_mlops.mlflow`
+
+Track:
+- Model versions
+- Training metrics
+- Hyperparameters
+- Model artifacts
+
+## 📈 Model Metrics
+
+Model evaluation metrics are stored in:
+- **Local**: `reports/metrics.json`
+- **MLflow**: Logged during evaluation stage
+
+Current model metrics (example):
+```json
+{
+  "accuracy": 0.85,
+  "precision": 0.84,
+  "recall": 0.86,
+  "auc": 0.92
+}
+```
+
+View metrics:
+- **MLflow UI**: Latest experiment run
+- **Local file**: `cat reports/metrics.json`
+- **Grafana**: If exposed as Prometheus metrics
+
+## 🔧 Configuration
+
+### Pipeline Parameters (`params.yaml`)
 
 ```yaml
 data_ingestion:
@@ -260,17 +367,71 @@ model_building:
   max_iter: 1000
 ```
 
-## Data Management
+Modify parameters in `params.yaml` and run `dvc repro` to retrain with new settings.
 
-- **Local Development**: Data stored in `data/` directory, versioned by DVC
-- **CI/CD**: Data downloaded fresh from source, processed on ephemeral runner
-- **Production**: Models in MLflow registry, vectorizer in container image
-- **Remote Storage**: DVC artifacts stored in AWS S3
+## 🧪 Testing
 
-## License
+### Test Structure
+- `tests/test_model.py`: Model validation tests
+- `tests/test_flask_app.py`: Flask application tests
+
+### Running Tests
+```bash
+# All tests
+python -m unittest discover tests
+
+# Specific test file
+python -m unittest tests.test_model
+```
+
+## 📝 Data Storage
+
+### Local Development
+- Data stored in `data/` directory
+- Tracked by DVC (not Git)
+- Versioned in DVC cache
+
+### CI/CD
+- Data downloaded fresh from source
+- Processed on CI runner
+- Artifacts not persisted (ephemeral)
+
+### Production
+- Models stored in MLflow
+- Vectorizer in Docker image
+- Data in S3 (DVC remote)
+
+## 🔐 Security
+
+- **Secrets Management**: GitHub Secrets for sensitive data
+- **Kubernetes Secrets**: DAGSHUB_TOKEN stored as K8s secret
+- **Environment Variables**: `.env` file (not committed)
+- **IAM Roles**: AWS credentials via IAM
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `python -m unittest discover tests`
+5. Commit and push
+6. Create a pull request
+
+## 📄 License
 
 See [LICENSE](LICENSE) file for details.
 
+## 🙏 Acknowledgments
+
+- DVC for data versioning
+- MLflow for experiment tracking
+- DAGSHub for MLflow hosting
+- AWS for cloud infrastructure
+
+## 📧 Contact
+
+For questions or issues, please open an issue on GitHub.
+
 ---
 
-**Built with industry-standard MLOps practices**
+**Built with ❤️ using MLOps best practices**
