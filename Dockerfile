@@ -21,7 +21,7 @@ COPY models/vectorizer.pkl /app/models/vectorizer.pkl
 EXPOSE 5005
 
 # Local development
-CMD ["python", "app.py"]  
+# CMD ["python", "app.py"]  
 
 # Production (uncomment when deploying)
-# CMD ["gunicorn", "--bind", "0.0.0.0:5005", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5005", "--timeout", "120", "app:app"]

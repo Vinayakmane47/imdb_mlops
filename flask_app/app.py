@@ -177,4 +177,4 @@ def metrics():
 
 if __name__ == "__main__":
     # app.run(debug=True) # for local use
-    app.run(debug=True, host="0.0.0.0", port=5002)  # Accessible from outside Docker
+    app.run(debug=True, host="0.0.0.0", port=5005)  # Accessible from outside Docker
