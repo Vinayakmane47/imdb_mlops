@@ -3,7 +3,7 @@ import mlflow
 import pickle
 import os
 import pandas as pd
-from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
 import time
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
@@ -11,52 +11,41 @@ import string
 import re
 import dagshub
 from dotenv import load_dotenv
-load_dotenv()
 import warnings
+
+# -------------------------------------------------------------------------
+# CONFIG
+# -------------------------------------------------------------------------
+load_dotenv()
 warnings.simplefilter("ignore", UserWarning)
 warnings.filterwarnings("ignore")
 
+# -------------------------------------------------------------------------
+# TEXT CLEANING HELPERS
+# -------------------------------------------------------------------------
 def lemmatization(text):
-    """Lemmatize the text."""
     lemmatizer = WordNetLemmatizer()
-    text = text.split()
-    text = [lemmatizer.lemmatize(word) for word in text]
-    return " ".join(text)
+    return " ".join([lemmatizer.lemmatize(word) for word in text.split()])
 
 def remove_stop_words(text):
-    """Remove stop words from the text."""
     stop_words = set(stopwords.words("english"))
-    text = [word for word in str(text).split() if word not in stop_words]
-    return " ".join(text)
+    return " ".join([word for word in str(text).split() if word not in stop_words])
 
 def removing_numbers(text):
-    """Remove numbers from the text."""
-    text = ''.join([char for char in text if not char.isdigit()])
-    return text
+    return ''.join([char for char in text if not char.isdigit()])
 
 def lower_case(text):
-    """Convert text to lower case."""
-    text = text.split()
-    text = [word.lower() for word in text]
-    return " ".join(text)
+    return " ".join([word.lower() for word in text.split()])
 
 def removing_punctuations(text):
-    """Remove punctuations from the text."""
     text = re.sub('[%s]' % re.escape(string.punctuation), ' ', text)
     text = text.replace('؛', "")
     text = re.sub('\s+', ' ', text).strip()
     return text
 
 def removing_urls(text):
-    """Remove URLs from the text."""
     url_pattern = re.compile(r'https?://\S+|www\.\S+')
     return url_pattern.sub(r'', text)
-
-def remove_small_sentences(df):
-    """Remove sentences with less than 3 words."""
-    for i in range(len(df)):
-        if len(df.text.iloc[i].split()) < 3:
-            df.text.iloc[i] = np.nan
 
 def normalize_text(text):
     text = lower_case(text)
@@ -65,18 +54,11 @@ def normalize_text(text):
     text = removing_punctuations(text)
     text = removing_urls(text)
     text = lemmatization(text)
-
     return text
 
-# Below code block is for local use
-# -------------------------------------------------------------------------------------
-# mlflow.set_tracking_uri('https://dagshub.com/Vinayakmane47/imdb_mlops.mlflow')
-# dagshub.init(repo_owner='Vinayakmane47', repo_name='imdb_mlops', mlflow=True)
-# -------------------------------------------------------------------------------------
-
-# Below code block is for production use
-# -------------------------------------------------------------------------------------
-# Set up DagsHub credentials for MLflow tracking
+# -------------------------------------------------------------------------
+# MLflow & DAGSHub setup
+# -------------------------------------------------------------------------
 dagshub_token = os.getenv("DAGSHUB_TOKEN")
 if not dagshub_token:
     raise EnvironmentError("DAGSHUB_TOKEN environment variable is not set")
@@ -87,44 +69,70 @@ os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 dagshub_url = "https://dagshub.com"
 repo_owner = "Vinayakmane47"
 repo_name = "imdb_mlops"
-# Set up MLflow tracking URI
+
 mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
-# -------------------------------------------------------------------------------------
 
-
-# Initialize Flask app
+# -------------------------------------------------------------------------
+# FLASK APP
+# -------------------------------------------------------------------------
 app = Flask(__name__)
 
-# from prometheus_client import CollectorRegistry
-
-# Create a custom registry
+# -------------------------------------------------------------------------
+# PROMETHEUS METRICS SETUP
+# -------------------------------------------------------------------------
 registry = CollectorRegistry()
 
-# Define your custom metrics using this registry
 REQUEST_COUNT = Counter(
-    "app_request_count", "Total number of requests to the app", ["method", "endpoint"], registry=registry
-)
-REQUEST_LATENCY = Histogram(
-    "app_request_latency_seconds", "Latency of requests in seconds", ["endpoint"], registry=registry
-)
-PREDICTION_COUNT = Counter(
-    "model_prediction_count", "Count of predictions for each class", ["prediction"], registry=registry
+    "app_request_count",
+    "Total number of requests to the app",
+    ["method", "endpoint"],
+    registry=registry
 )
 
-# ------------------------------------------------------------------------------------------
-# Model and vectorizer setup
+REQUEST_LATENCY = Histogram(
+    "app_request_latency_seconds",
+    "Latency of requests in seconds",
+    ["endpoint"],
+    registry=registry
+)
+
+PREDICTION_COUNT = Counter(
+    "model_prediction_count",
+    "Count of predictions for each class",
+    ["prediction"],
+    registry=registry
+)
+
+# ✅ New cost metrics
+COST_PER_REQUEST = Gauge(
+    "app_cost_per_request_usd",
+    "Estimated EC2/EKS compute cost per inference request in USD",
+    ["endpoint"],
+    registry=registry
+)
+
+TOTAL_COST = Counter(
+    "app_total_cost_usd",
+    "Total accumulated EC2/EKS compute cost in USD",
+    registry=registry
+)
+
+# Adjust this according to your instance type
+INSTANCE_COST_PER_HOUR = 0.0416   # Example: t3.medium
+SECONDS_IN_HOUR = 3600
+
+# -------------------------------------------------------------------------
+# MODEL SETUP
+# -------------------------------------------------------------------------
 model_name = "my_model"
+
 def get_latest_model_version(model_name):
-    """Get the latest model version from MLflow registry."""
     try:
         client = mlflow.MlflowClient()
-        # Try Production stage first
         latest_version = client.get_latest_versions(model_name, stages=["Production"])
         if not latest_version:
-            # Try Staging stage
             latest_version = client.get_latest_versions(model_name, stages=["Staging"])
         if not latest_version:
-            # Try any version
             latest_version = client.get_latest_versions(model_name, stages=["None"])
         return latest_version[0].version if latest_version else None
     except Exception as e:
@@ -137,7 +145,9 @@ print(f"Fetching model from: {model_uri}")
 model = mlflow.pyfunc.load_model(model_uri)
 vectorizer = pickle.load(open('models/vectorizer.pkl', 'rb'))
 
-# Routes
+# -------------------------------------------------------------------------
+# ROUTES
+# -------------------------------------------------------------------------
 @app.route("/")
 def home():
     REQUEST_COUNT.labels(method="GET", endpoint="/").inc()
@@ -152,29 +162,31 @@ def predict():
     start_time = time.time()
 
     text = request.form["text"]
-    # Clean text
     text = normalize_text(text)
-    # Convert to features
     features = vectorizer.transform([text])
     features_df = pd.DataFrame(features.toarray(), columns=[str(i) for i in range(features.shape[1])])
 
-    # Predict
     result = model.predict(features_df)
     prediction = result[0]
-
-    # Increment prediction count metric
     PREDICTION_COUNT.labels(prediction=str(prediction)).inc()
 
-    # Measure latency
-    REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start_time)
+    latency = time.time() - start_time
+    REQUEST_LATENCY.labels(endpoint="/predict").observe(latency)
 
-    return render_template("index.html", result=prediction)
+    # Compute cost based on EC2/EKS instance pricing
+    cost = (latency * INSTANCE_COST_PER_HOUR) / SECONDS_IN_HOUR
+    COST_PER_REQUEST.labels(endpoint="/predict").set(cost)
+    TOTAL_COST.inc(cost)
+
+    return render_template("index.html", result=prediction, latency=latency, cost=cost)
 
 @app.route("/metrics", methods=["GET"])
 def metrics():
     """Expose only custom Prometheus metrics."""
     return generate_latest(registry), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
+# -------------------------------------------------------------------------
+# MAIN ENTRY
+# -------------------------------------------------------------------------
 if __name__ == "__main__":
-    # app.run(debug=True) # for local use
-    app.run(debug=True, host="0.0.0.0", port=5005)  # Accessible from outside Docker
+    app.run(debug=True, host="0.0.0.0", port=5005)
