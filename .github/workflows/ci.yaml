@@ -93,3 +93,5 @@ jobs:
       - name: Deploy to EKS
         run: |
           kubectl apply -f deployment.yaml
+          kubectl rollout restart deployment flask-app
+          kubectl rollout status deployment flask-app --timeout=300s
