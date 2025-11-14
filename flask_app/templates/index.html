@@ -339,9 +339,9 @@
                     {% endif %}
                 </div>
 
-                {% if latency is not none or cost is not none %}
+                {% if (latency is defined and latency is not none) or (cost is defined and cost is not none) %}
                 <div class="metrics">
-                    {% if latency is not none %}
+                    {% if latency is defined and latency is not none %}
                     <div class="metric-card">
                         <div class="metric-label">
                             <i class="fas fa-clock"></i> Response Time
@@ -352,7 +352,7 @@
                     </div>
                     {% endif %}
 
-                    {% if cost is not none %}
+                    {% if cost is defined and cost is not none %}
                     <div class="metric-card">
                         <div class="metric-label">
                             <i class="fas fa-dollar-sign"></i> Cost per Request
@@ -370,7 +370,7 @@
         <div class="footer">
             <p>
                 <i class="fas fa-server"></i> Powered by MLflow & EKS
-                {% if latency is not none %}
+                {% if latency is defined and latency is not none %}
                 | <i class="fas fa-tachometer-alt"></i> Latency: {{ "%.3f"|format(latency) }}s
                 {% endif %}
             </p>
